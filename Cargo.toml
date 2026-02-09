@@ -5,8 +5,12 @@ authors = ["Codecrafters <hello@codecrafters.io>"]
 edition = "2024"
 rust-version = "1.92"
 
+[lints.rust]
+unsafe_code = "forbid"
+unused = { level = "allow", priority = -1 }
+
 [lib]
-name = "shlib"
+name = "lib"
 path = "src/lib.rs"
 
 [dependencies]

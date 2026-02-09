@@ -1,3 +1,5 @@
+use lib::conversation::Manager;
+
 use async_openai::{Client, config::OpenAIConfig};
 use clap::Parser;
 use serde_json::{Value, json};
@@ -27,42 +29,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_api_key(api_key);
 
     let client = Client::with_config(config);
+    let mut manager = Manager::new(&args.prompt);
+    // eprintln!("Logs from your program will appear here"); // for debugging
+    loop {
+        // 1. Send current history to the model
+        let response: Value = client
+            .chat()
+            .create_byot(json!({
+                "model": "anthropic/claude-haiku-4.5",
+                "messages": manager.messages,
+                "tools": manager.tools,
+            }))
+            .await?;
 
-    #[allow(unused_variables)]
-    let response: Value = client
-        .chat()
-        .create_byot(json!({
-            "messages": [
-                {
-                    "role": "user",
-                    "content": args.prompt
-                }
-            ],
-            "model": "anthropic/claude-haiku-4.5",
-            "tools": [
-                {"type": "function", "function": {
-                    "name": "Read",
-                    "description": "Read and return the contents of a file",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "file_path": {
-                                "type": "string",
-                                "description": "The path to the file to read"
-                            }
-                        },
-                        "required": ["file_path"]
-                    }
-                }},
-            ],
-        }))
-        .await?;
+        let message = &response["choices"][0]["message"];
+        manager.add_message(message.clone());
 
-    // You can use print statements as follows for debugging
-    eprintln!("Logs from your program will appear here!");
+        if let Some(tool_calls) = message["tool_calls"].as_array() {
+            for call in tool_calls {
+                manager.handle_tool_call(call)?;
+            }
+            continue; // Continue the loop to send tool results back to the LLM
+        }
 
-    if let Some(content) = response["choices"][0]["message"]["content"].as_str() {
-        println!("{}", content);
+        // 3. If no tool calls, the AI has provided its final answer
+        if let Some(content) = message["content"].as_str() {
+            println!("{}", content);
+        }
+        break;
     }
 
     Ok(())
