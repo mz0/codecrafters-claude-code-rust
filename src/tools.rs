@@ -1,24 +1,12 @@
 use serde_json::{json, Value};
 use std::fs;
+use strum::{Display, EnumString, IntoEnumIterator, EnumIter};
 
-#[derive(Debug, Clone, Copy)]
+
+#[derive(Debug, Clone, Copy, EnumString, Display, EnumIter)]
 pub enum ToolName {
-    Read,
-}
-
-impl ToolName {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            ToolName::Read => "Read",
-        }
-    }
-
-    pub fn from_str(s: &str) -> Option<Self> {
-        match s {
-            "Read" => Some(ToolName::Read),
-            _ => None,
-        }
-    }
+    ReadFile,
+    WriteFile,
 }
 
 pub struct Tool {
@@ -30,7 +18,7 @@ impl Tool {
     pub fn read_file() -> Self {
         Self {
             definition: json!({"type": "function", "function": {
-                    "name": ToolName::Read.as_str(),
+                    "name": ToolName::ReadFile.to_string(),
                     "description": "Read and return the contents of a file",
                     "parameters": {
                         "type": "object",
@@ -65,5 +53,95 @@ impl Tool {
             }
         }
         fs::read_to_string(path).map_err(|e| e.to_string())
+    }
+
+    pub fn write_file() -> Self {
+        Self {
+            definition: json!({"type": "function", "function": {
+                    "name": ToolName::WriteFile.to_string(),
+                    "description": "Write content to a file",
+                    "parameters": {
+                        "type": "object",
+                        "required": ["file_path", "content"],
+                        "properties": {
+                            "file_path": {
+                                "type": "string",
+                                "description": "The path to the file to read"
+                            },
+                            "content": {
+                                "type": "string",
+                                "description": "The content to write to the file"
+                            }
+                        }
+                    }
+                }}),
+        }
+    }
+
+    pub fn call_write_file(args: Value) -> Result<String, String> {
+        let path_str = args["file_path"].as_str()
+            .ok_or("Missing file_path argument")?;
+        let content = args["content"].as_str()
+            .ok_or("Missing content argument")?;
+
+        let path = std::path::Path::new(path_str);
+
+        if let Some(file_name) = path.file_name() {
+            if file_name == ".env" {
+                return Err("Access to .env file is forbidden".to_string());
+            }
+        }
+
+        fs::write(path, content).map_err(|e| e.to_string())?;
+        Ok(format!("Wrote OK {}", path_str))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use tempfile::tempdir;
+
+    #[test]
+    fn test_write_readme_with_code_block() {
+        let dir = tempdir().unwrap();
+        let file_path = dir.path().join("README.md");
+        let text = r#"# Test
+Write file `app/main.py` with the following content:
+```python
+print("Hello world")
+```
+"#;
+        let args = json!({
+            "file_path": file_path.to_str().unwrap(),
+            "content": text
+        });
+
+        let result = Tool::call_write_file(args);
+        assert!(result.is_ok());
+
+        let written = fs::read_to_string(&file_path).unwrap();
+        assert_eq!(written, text);
+    }
+
+    #[test]
+    fn test_write_python_file() {
+        let dir = tempdir().unwrap();
+        let app_dir = dir.path().join("app");
+        fs::create_dir(&app_dir).unwrap();
+        let file_path = app_dir.join("main.py");
+        let main_py_text = "print(\"Hello world\")";
+
+        let args = json!({
+            "file_path": file_path.to_str().unwrap(),
+            "content": main_py_text
+        });
+
+        let result = Tool::call_write_file(args);
+        assert!(result.is_ok());
+
+        let written = fs::read_to_string(&file_path).unwrap();
+        assert_eq!(written, main_py_text);
     }
 }

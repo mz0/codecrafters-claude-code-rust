@@ -10,7 +10,10 @@ impl Manager {
     pub fn new(prompt: &str) -> Self {
         Self {
             messages: vec![json!({ "role": "user", "content": prompt })],
-            tools: vec![Tool::read_file().definition],
+            tools: vec![
+                Tool::read_file().definition,
+                Tool::write_file().definition,
+            ]
         }
     }
 
@@ -26,9 +29,10 @@ impl Manager {
         let args: Value = serde_json::from_str(args_str).map_err(|e| e.to_string())?;
         let call_id = tool_call["id"].as_str().unwrap_or("");
 
-        let result = match ToolName::from_str(name) {
-            Some(ToolName::Read) => Tool::call_read_file(args),
-            _ => Err(format!("Tool {} not found", name)),
+        let result = match name.parse::<ToolName>() {
+            Ok(ToolName::ReadFile) => Tool::call_read_file(args),
+            Ok(ToolName::WriteFile) => Tool::call_write_file(args),
+            Err(_) => Err(format!("Tool {} not found", name)),
         };
 
         // Format the result for the AI
@@ -39,5 +43,32 @@ impl Manager {
         }));
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use strum::IntoEnumIterator;
+
+    #[test]
+    fn test_all_tools_offered() {
+        let manager = Manager::new("test");
+
+        // Collect all tool names offered to the model
+        let offered_names: Vec<String> = manager.tools
+            .iter()
+            .filter_map(|t| t["function"]["name"].as_str())
+            .map(|s| s.to_string())
+            .collect();
+
+        // Check that every ToolName variant is offered
+        for tool_name in ToolName::iter() {
+            assert!(
+                offered_names.contains(&tool_name.to_string()),
+                "Tool '{}' is not offered to the model",
+                tool_name
+            );
+        }
     }
 }
