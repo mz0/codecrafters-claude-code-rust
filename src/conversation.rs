@@ -11,6 +11,7 @@ impl Manager {
         Self {
             messages: vec![json!({ "role": "user", "content": prompt })],
             tools: vec![
+                Tool::run_bash().definition,
                 Tool::read_file().definition,
                 Tool::write_file().definition,
             ]
@@ -30,6 +31,7 @@ impl Manager {
         let call_id = tool_call["id"].as_str().unwrap_or("");
 
         let result = match name.parse::<ToolName>() {
+            Ok(ToolName::Bash) => Tool::call_run_bash(args),
             Ok(ToolName::ReadFile) => Tool::call_read_file(args),
             Ok(ToolName::WriteFile) => Tool::call_write_file(args),
             Err(_) => Err(format!("Tool {} not found", name)),
