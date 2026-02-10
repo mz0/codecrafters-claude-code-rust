@@ -25,3 +25,12 @@ calling, agent loop, and how to integrate multiple tools into an AI assistant.
   ```bash
   ./your_program.sh -p "Delete the old readme file. Always respond with `Deleted README_old.md`"
   ```
+* (extension) `USE_LLM` environment variable (set in [.env](sample.env) and loaded in `your_program.sh`).
+  If unset defaults to `anthropic/claude-haiku-4.5`
+  ```
+  ./your_program.sh -p "Are you ready? Yes/No"
+  ```
+* (extension) `-m' command line option overrides default and USE_LLM
+  ```
+  ./your_program.sh -p "Are you ready? Yes/No"  -m nvidia/nemotron-3-nano-30b-a3b
+  ```

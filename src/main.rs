@@ -10,11 +10,15 @@ use std::{env, process};
 struct Args {
     #[arg(short = 'p', long)]
     prompt: String,
+
+    #[arg(short = 'm', long, env = "USE_LLM", default_value = "anthropic/claude-haiku-4.5")]
+    model: String,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
+    // println!("Using LLM '{}'", &args.model);
 
     let base_url = env::var("OPENROUTER_BASE_URL")
         .unwrap_or_else(|_| "https://openrouter.ai/api/v1".to_string());
@@ -36,7 +40,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let response: Value = client
             .chat()
             .create_byot(json!({
-                "model": "anthropic/claude-haiku-4.5",
+                "model": &args.model,
                 "messages": manager.messages,
                 "tools": manager.tools,
             }))

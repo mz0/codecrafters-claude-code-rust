@@ -8,6 +8,11 @@
 
 set -e # Exit early if any commands fail
 
+# Export variables from .env file if it exists
+if [ -f .env ]; then
+  export $(grep -v '^#' .env | xargs)
+fi
+
 # Copied from .codecrafters/compile.sh
 #
 # - Edit this to change how your program compiles locally
