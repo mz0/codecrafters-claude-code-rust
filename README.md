@@ -28,7 +28,14 @@ calling, agent loop, and how to integrate multiple tools into an AI assistant.
 * (extension) `USE_LLM` environment variable (set in [.env](sample.env) and loaded in `your_program.sh`).
   If unset defaults to `anthropic/claude-haiku-4.5`
   ```
-  ./your_program.sh -p "Are you ready? Yes/No"
+  ./your_program.sh -p 'What does 9*6 equal? Respond with only a number.'
+  54
+
+  ./your_program.sh -p \
+    "How many tools are available to you in this request?
+     Respond with a number and list. Example: 2: FooTool, bar_keeper."
+
+  3: Bash, ReadFile, WriteFile
   ```
 * (extension) `-m' command line option overrides default and USE_LLM
   ```
