@@ -41,3 +41,22 @@ calling, agent loop, and how to integrate multiple tools into an AI assistant.
   ```
   ./your_program.sh -p "Are you ready? Yes/No"  -m nvidia/nemotron-3-nano-30b-a3b
   ```
+### Real *Claude Code* tools
+
+| Name  | Purpose |
+| ----- | ------- |
+| Agent | Launch a subagent to handle a task |
+| Bash  | Run a shell command |
+| Edit  | Edit a file    |
+| Glob  | Find files     |
+| Grep  | Search in file |
+| LS    | List files and directories |
+| MultiEdit    | MAke several edits at the same time  |
+| NotebookEdit | Write to a Jupyter notebook cell     |
+| NotebookRead | Read Jupyter notebook cell           |
+| Read         | Read a file    |
+| TodoRead     | Read one of the created to-do's      |
+| TodoWrite    | Write ...      |
+| WebFetch     | Fetch from URL |
+| WebSearch    | Search the Web |
+| Write        | Write a file   |
